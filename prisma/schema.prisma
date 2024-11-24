@@ -1,0 +1,77 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String?  // Nullable for OAuth users
+  name      String
+  image     String?
+  role      String   @default("user") // "user" or "admin"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  // emails    Email[]              // A user can have many emails
+}
+
+model LearningModule {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  content     String
+  slug        String   @unique
+  icon        String   // Save as string for serialization
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userProgress UserProgress[]
+}
+
+model UserProgress {
+  id          String   @id @default(cuid())
+  userId      String
+  moduleId    String
+  completed   Boolean  @default(false)
+  updatedAt   DateTime @updatedAt
+
+  // user        User     @relation(fields: [userId], references: [id])
+  module      LearningModule @relation(fields: [moduleId], references: [id])
+}
+
+model Email {
+  id          String   @id @default(uuid())
+  gmailId     String   @unique
+  userId      String
+  subject     String
+  snippet     String
+  from        String
+  body        String
+  receivedAt  DateTime
+  createdAt   DateTime @default(now())
+}
+
+model PhishingScanResult {
+  id         String   @id @default(cuid())
+  emailId    String    // Foreign key to Email
+  // email      Email     @relation(fields: [emailId], references: [id], onDelete: Cascade)
+  scanResult String    // Store detailed phishing scan result
+  score      Float     // Phishing scan confidence score
+  level      String    // Risk level (e.g., Low, Moderate, High)
+  indicators String    // Key phishing indicators
+  createdAt  DateTime  @default(now())
+
+  @@index([emailId])
+}
